@@ -23,15 +23,66 @@ function Header({ page, setPage }) {
 function Footer() { return <footer><strong>ParkOpt</strong><span>Intelligent Spatial Urban Mobility Infrastructure</span><a>Terminal Grid</a><a>Security Protocols</a><a>Privacy Architecture</a><a>Telemetry API</a><small>© 2025 ParkOpt Spatial Systems. All rights reserved.</small></footer> }
 
 function BlastParticles() {
-  return <div className="blast-particles" aria-hidden="true">{Array.from({ length: 28 }, (_, index) => <i key={index} style={{ '--x': `${Math.cos(index * 1.7) * (70 + index * 4)}px`, '--y': `${Math.sin(index * 1.7) * (45 + index * 3)}px`, '--delay': `${index * 18}ms` }} />)}</div>
+  return <div className="blast-particles" id="particleCanvasStage" aria-hidden="true" />
 }
 
 function Home({ setPage }) {
   const [blasted, setBlasted] = useState(false)
 
+  const spawnBurst = (event, returning = false) => {
+    const stage = document.getElementById('particleCanvasStage')
+    if (!stage) return
+    const rect = event.currentTarget.getBoundingClientRect()
+    const originX = event.clientX || rect.left + rect.width / 2
+    const originY = event.clientY || rect.top + rect.height / 2
+    const count = returning ? 20 : 42
+    const colors = ['#C6F36A', '#FFFFFF', '#67E8F9', '#818CF8', '#A7F3D0']
+    for (let index = 0; index < count; index += 1) {
+      const particle = document.createElement('i')
+      const angle = returning ? Math.random() * Math.PI * 2 : (Math.PI * 2 * index) / count + (Math.random() - 0.5) * 0.45
+      const distance = returning ? 120 + Math.random() * 80 : 85 + Math.random() * 240
+      particle.className = 'spark-particle'
+      particle.style.left = `${returning ? originX + Math.cos(angle) * distance : originX}px`
+      particle.style.top = `${returning ? originY + Math.sin(angle) * distance : originY}px`
+      particle.style.setProperty('--tx', `${returning ? -Math.cos(angle) * distance : Math.cos(angle) * distance}px`)
+      particle.style.setProperty('--ty', `${returning ? -Math.sin(angle) * distance : Math.sin(angle) * distance}px`)
+      const color = returning ? '#C6F36A' : colors[Math.floor(Math.random() * colors.length)]
+      particle.style.width = `${returning ? 4 : Math.floor(Math.random() * 6) + 3}px`
+      particle.style.height = particle.style.width
+      particle.style.backgroundColor = color
+      particle.style.boxShadow = `0 0 12px ${color}`
+      stage.appendChild(particle)
+      window.setTimeout(() => particle.remove(), returning ? 700 : 900)
+    }
+  }
+
+  const toggleBlast = (event) => {
+    setBlasted((value) => {
+      const next = !value
+      const wave = document.createElement('div')
+      wave.className = 'shockwave-ring'
+      wave.style.left = `${event.clientX}px`
+      wave.style.top = `${event.clientY}px`
+      document.getElementById('particleCanvasStage')?.appendChild(wave)
+      window.setTimeout(() => wave.remove(), 950)
+      spawnBurst(event, value)
+      return next
+    })
+  }
+
+  const tiltPhone = (event) => {
+    const stage = event.currentTarget
+    const phone = stage.querySelector('.phone')
+    const rect = stage.getBoundingClientRect()
+    const deltaX = (event.clientX - rect.left - rect.width / 2) / (rect.width / 2)
+    const deltaY = (event.clientY - rect.top - rect.height / 2) / (rect.height / 2)
+    phone.style.transform = `perspective(1200px) rotateX(${-deltaY * 12}deg) rotateY(${deltaX * 14}deg) scale3d(1.02, 1.02, 1.02)`
+  }
+
   return <main className={'home page-shell ' + (blasted ? 'is-blasted' : '')}>
-    <div className="hero-copy hero-reveal"><div className="eyebrow"><span className="pulse" /> AUTONOMOUS BAY ROUTING v3.4</div><button className="headline-trigger" onClick={() => setBlasted(value => !value)} aria-label={blasted ? 'Reconstruct headline' : 'Blast headline'}><span className="blast-word">Silence your</span><br /><span className="blast-word"><em>parking</em> <em>chaos.</em></span></button><span className="blast-hint">{blasted ? 'Click again to reconstruct' : 'Click to blast headline'} <b>↯</b></span><p>Arrive without hesitation when spaces are held before departure. Silence the circling, bypass tight gates with auto-lift telemetry, and park with ParkOpt — your frictionless urban bay concierge.</p><div className="hero-actions"><button className="primary magnetic" onClick={() => setPage('discover')}>Reserve a Bay <span>→</span></button><button className="round">⌘</button><button className="round">↓</button></div><small>* Zero credit card required for 15-min hold</small></div>
-    <div className="hero-visual hero-reveal"><BlastParticles /><div className="hero-orbit orbit-one" /><div className="hero-orbit orbit-two" /><div className="wordmark">PARKOPT</div><div className="glow-star">✦</div><div className="phone"><div className="phone-scan" /><div className="phone-top">16:22 <span>● ● ▰</span></div><small>Hey, Alex!<br /><b>Welcome to Isham Deck</b></small><h2>Ready for<br />another seamless<br />arrival?</h2><div className="phone-pills"><span>Recent</span><span>EV Rapid</span><span>Covered</span></div><div className="phone-card"><small>Active Bay Hold</small><strong>Isham Multilevel · L2-04</strong><span className="lime">● Live Beacon</span><small>00:00 hold remaining</small></div><div className="phone-card dim"><strong>Memorial Garage</strong><span>$2.50/hr</span></div></div></div>
+    <div className="ambient-glow" aria-hidden="true" /><div className="ambient-glow-secondary" aria-hidden="true" />
+    <div className="hero-copy hero-reveal"><div className="eyebrow"><span className="pulse" /> AUTONOMOUS BAY ROUTING v3.4</div><button className="headline-trigger headline-stage" onClick={toggleBlast} aria-label={blasted ? 'Reconstruct headline' : 'Blast headline'}><span className="blast-word blast-word-1 word-silence">Silence</span> <span className="blast-word blast-word-1 word-your">Your</span><br /><span className="blast-word blast-word-2 word-parking">Parking</span><span className="hero-asterisk">✱</span><span className="blast-word blast-word-3 word-chaos">Chaos</span></button><span className="blast-hint hint-pill-pulse">{blasted ? 'Explosion active · click to collapse' : 'Click to blast headline'} <b>↯</b></span><p>Arrive without hesitation when spaces are held before departure. Silence the circling, bypass tight gates with auto-lift telemetry, and park with ParkOpt — your frictionless urban bay concierge.</p><div className="hero-actions"><button className="primary magnetic" onClick={() => setPage('discover')}>Reserve a Bay <span>→</span></button><button className="round">⌘</button><button className="round">↓</button></div><small>* Zero credit card required for 15-min hold</small></div>
+    <div className="hero-visual hero-reveal device-float-stage" onMouseMove={tiltPhone} onMouseLeave={(event) => { event.currentTarget.querySelector('.phone').style.transform = '' }}><BlastParticles /><div className={'monument-backdrop ' + (blasted ? 'monument-visible' : '')}>PARKOPT</div><div className="hero-orbit orbit-one" /><div className="hero-orbit orbit-two" /><div className="wordmark">PARKOPT</div><div className="glow-star">✦</div><div className="phone device-tilt"><div className="phone-scan" /><div className="phone-top">16:22 <span>● ● ▰</span></div><small>Hey, Alex!<br /><b>Welcome to Isham Deck</b></small><h2>Ready for<br />another seamless<br />arrival?</h2><div className="phone-pills"><span>Recent</span><span>EV Rapid</span><span>Covered</span></div><div className="phone-card"><small>Active Bay Hold</small><strong>Isham Multilevel · L2-04</strong><span className="lime">● Live Beacon</span><small>00:00 hold remaining</small></div><div className="phone-card dim"><strong>Memorial Garage</strong><span>$2.50/hr</span></div></div></div>
     <div className="download-pill hero-reveal"><span>☰</span><b>▰</b><button>Download</button></div><div className="hero-note hero-reveal">An elegant companion designed for effortless, distraction-free arrival.<br /><div className="store-icons">●　G　 <b>HOLD<br />00:00</b></div></div>
   </main>
 }
