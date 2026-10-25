@@ -20,11 +20,11 @@ INSERT INTO auth.users (
   email_change_token_new, email_change
 )
 VALUES
-  ('00000000-0000-0000-0000-000000000000', '10000000-0000-4000-8000-000000000001', 'authenticated', 'authenticated', 'demo.owner1@parkopt.local', crypt('LocalDemo123!', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}'::jsonb, '{"full_name":"Demo Owner One"}'::jsonb, now(), now(), '', '', '', ''),
-  ('00000000-0000-0000-0000-000000000000', '10000000-0000-4000-8000-000000000002', 'authenticated', 'authenticated', 'demo.owner2@parkopt.local', crypt('LocalDemo123!', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}'::jsonb, '{"full_name":"Demo Owner Two"}'::jsonb, now(), now(), '', '', '', ''),
-  ('00000000-0000-0000-0000-000000000000', '10000000-0000-4000-8000-000000000003', 'authenticated', 'authenticated', 'demo.driver1@parkopt.local', crypt('LocalDemo123!', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}'::jsonb, '{"full_name":"Demo Driver One"}'::jsonb, now(), now(), '', '', '', ''),
-  ('00000000-0000-0000-0000-000000000000', '10000000-0000-4000-8000-000000000004', 'authenticated', 'authenticated', 'demo.driver2@parkopt.local', crypt('LocalDemo123!', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}'::jsonb, '{"full_name":"Demo Driver Two"}'::jsonb, now(), now(), '', '', '', ''),
-  ('00000000-0000-0000-0000-000000000000', '10000000-0000-4000-8000-000000000005', 'authenticated', 'authenticated', 'demo.driver3@parkopt.local', crypt('LocalDemo123!', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}'::jsonb, '{"full_name":"Demo Driver Three"}'::jsonb, now(), now(), '', '', '', '')
+  ('00000000-0000-0000-0000-000000000000', '10000000-0000-4000-8000-000000000001', 'authenticated', 'authenticated', 'demo.owner1@parkopt.local', crypt('LocalDemo123!', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}'::jsonb, '{"full_name":" Owner One"}'::jsonb, now(), now(), '', '', '', ''),
+  ('00000000-0000-0000-0000-000000000000', '10000000-0000-4000-8000-000000000002', 'authenticated', 'authenticated', 'demo.owner2@parkopt.local', crypt('LocalDemo123!', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}'::jsonb, '{"full_name":" Owner Two"}'::jsonb, now(), now(), '', '', '', ''),
+  ('00000000-0000-0000-0000-000000000000', '10000000-0000-4000-8000-000000000003', 'authenticated', 'authenticated', 'demo.driver1@parkopt.local', crypt('LocalDemo123!', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}'::jsonb, '{"full_name":" Driver One"}'::jsonb, now(), now(), '', '', '', ''),
+  ('00000000-0000-0000-0000-000000000000', '10000000-0000-4000-8000-000000000004', 'authenticated', 'authenticated', 'demo.driver2@parkopt.local', crypt('LocalDemo123!', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}'::jsonb, '{"full_name":" Driver Two"}'::jsonb, now(), now(), '', '', '', ''),
+  ('00000000-0000-0000-0000-000000000000', '10000000-0000-4000-8000-000000000005', 'authenticated', 'authenticated', 'demo.driver3@parkopt.local', crypt('LocalDemo123!', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}'::jsonb, '{"full_name":" Driver Three"}'::jsonb, now(), now(), '', '', '', '')
 ON CONFLICT (id) DO NOTHING;
 
 -- Make the first two demo accounts parking owners.
@@ -57,28 +57,28 @@ INSERT INTO public.parking_spaces (
 )
 VALUES
   ('20000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001',
-   'Demo Parking - Shivajinagar', 'Fictional test listing near Shivajinagar.',
-   'Demo Lane 1', 'Pune', 'Maharashtra', 'India', '411005',
+   'Shivajinagar', 'Fictional test listing near Shivajinagar.',
+   'Lane 1', 'Pune', 'Maharashtra', 'India', '411005',
    ST_SetSRID(ST_MakePoint(73.8478, 18.5308), 4326)::geography, 18.5308, 73.8478,
    4, 5000, 'suv', TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, 'active', ARRAY[]::text[]),
   ('20000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000001',
-   'Demo Parking - Deccan', 'Fictional covered parking test listing.',
-   'Demo Lane 2', 'Pune', 'Maharashtra', 'India', '411004',
+   'Deccan', 'Fictional covered parking test listing.',
+   'Lane 2', 'Pune', 'Maharashtra', 'India', '411004',
    ST_SetSRID(ST_MakePoint(73.8390, 18.5167), 4326)::geography, 18.5167, 73.8390,
    3, 4000, 'sedan', TRUE, TRUE, FALSE, TRUE, FALSE, TRUE, 'active', ARRAY[]::text[]),
   ('20000000-0000-4000-8000-000000000003', '10000000-0000-4000-8000-000000000002',
-   'Demo Parking - Koregaon Park', 'Fictional parking listing with EV charging.',
-   'Demo Lane 3', 'Pune', 'Maharashtra', 'India', '411001',
+   'Koregaon Park', 'Fictional parking listing with EV charging.',
+   'Lane 3', 'Pune', 'Maharashtra', 'India', '411001',
    ST_SetSRID(ST_MakePoint(73.8958, 18.5362), 4326)::geography, 18.5362, 73.8958,
    5, 7500, 'electric', TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, 'active', ARRAY[]::text[]),
   ('20000000-0000-4000-8000-000000000004', '10000000-0000-4000-8000-000000000002',
-   'Demo Parking - Camp', 'Fictional open-air parking test listing.',
-   'Demo Lane 4', 'Pune', 'Maharashtra', 'India', '411001',
+   'Camp', 'Fictional open-air parking test listing.',
+   'Lane 4', 'Pune', 'Maharashtra', 'India', '411001',
    ST_SetSRID(ST_MakePoint(73.8790, 18.5130), 4326)::geography, 18.5130, 73.8790,
    2, 3000, 'sedan', FALSE, TRUE, TRUE, TRUE, FALSE, FALSE, 'active', ARRAY[]::text[]),
   ('20000000-0000-4000-8000-000000000005', '10000000-0000-4000-8000-000000000001',
-   'Demo Parking - Pune Station', 'Fictional parking listing for search testing.',
-   'Demo Lane 5', 'Pune', 'Maharashtra', 'India', '411001',
+   'Pune Station', 'Fictional parking listing for search testing.',
+   'Lane 5', 'Pune', 'Maharashtra', 'India', '411001',
    ST_SetSRID(ST_MakePoint(73.8740, 18.5289), 4326)::geography, 18.5289, 73.8740,
    6, 6000, 'van', FALSE, TRUE, TRUE, TRUE, FALSE, TRUE, 'active', ARRAY[]::text[])
 ON CONFLICT (id) DO NOTHING;
@@ -97,19 +97,19 @@ VALUES
    '20000000-0000-4000-8000-000000000001',
    date_trunc('day', now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC' + interval '2 days 09 hours',
    date_trunc('day', now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC' + interval '2 days 11 hours',
-   5000, 2, 10000, 'sedan', 'DEMO-101', 'confirmed', 'unpaid', 'Demo booking record'),
+   5000, 2, 10000, 'sedan', '101', 'confirmed', 'unpaid', 'booking record'),
   ('30000000-0000-4000-8000-000000000002',
    '10000000-0000-4000-8000-000000000004',
    '20000000-0000-4000-8000-000000000003',
    date_trunc('day', now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC' + interval '3 days 10 hours',
    date_trunc('day', now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC' + interval '3 days 13 hours',
-   7500, 3, 22500, 'electric', 'DEMO-202', 'confirmed', 'unpaid', 'Demo EV booking record'),
+   7500, 3, 22500, 'electric', '202', 'confirmed', 'unpaid', 'EV booking record'),
   ('30000000-0000-4000-8000-000000000003',
    '10000000-0000-4000-8000-000000000005',
    '20000000-0000-4000-8000-000000000005',
    date_trunc('day', now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC' + interval '4 days 12 hours',
    date_trunc('day', now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC' + interval '4 days 14 hours',
-   6000, 2, 12000, 'van', 'DEMO-303', 'pending', 'unpaid', 'Demo pending booking record')
+   6000, 2, 12000, 'van', '303', 'pending', 'unpaid', 'pending booking record')
 ON CONFLICT (id) DO NOTHING;
 
 COMMIT;

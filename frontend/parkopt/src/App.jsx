@@ -116,7 +116,7 @@ function Home({ setPage }) {
 
         <div className="hero-actions">
           <button className="primary magnetic" onClick={() => setPage('explore')}>
-            Reserve a Bay
+            Reserve a Spot
           </button>
           <button className="icon-button" aria-label="Scroll down">
             ⌄
@@ -195,10 +195,10 @@ function HomeHeader({ onExplore }) {
     <header className="topbar-home">
       <div className="topbar-inner">
         <div className="eyebrow home-eyebrow">
-          <span className="pulse" /> AUTONOMOUS BAY ROUTING v3.4
+          <span className="pulse" /> TEAM INNOVERSE
         </div>
         <button className="mini-brand" onClick={onExplore}>
-          parkopt
+          ParkOpt
         </button>
       </div>
     </header>
@@ -341,12 +341,12 @@ const showBottomNav = !['home', 'auth', 'pass', 'facility', 'booking'].includes(
 
       {/* Auth gate message for un-authed direct nav */}
       {['bookings', 'profile'].includes(page) && !session && (
-        <div className="fixed inset-0 flex flex-col items-center justify-center bg-[#051424] gap-4">
-          <span className="material-symbols-outlined text-[48px] text-[#94A3B8]">lock</span>
-          <p className="text-[16px] text-[#94A3B8]">Sign in to access this page</p>
+        <div className="fixed inset-0 flex flex-col items-center justify-center bg-surface gap-4">
+          <span className="material-symbols-outlined text-[48px] text-text-muted">lock</span>
+          <p className="text-[16px] text-text-muted">Sign in to access this page</p>
           <button
             onClick={() => setPage('auth')}
-            className="px-6 py-3 rounded-full bg-[#c5f269] text-[#253600] font-bold text-[14px]"
+            className="px-6 py-3 rounded-full bg-[#c5f269] text-on-primary font-bold text-[14px]"
             style={{ fontFamily: 'Space Grotesk, sans-serif' }}
           >
             Sign In
