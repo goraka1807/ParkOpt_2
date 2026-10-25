@@ -1,0 +1,395 @@
+{
+  "info": {
+    "name": "ParkOpt Backend API",
+    "description": "Test collection for all ParkOpt backend operations via Supabase",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "SUPABASE_URL",
+      "value": "https://your-project-id.supabase.co",
+      "description": "Your Supabase project URL"
+    },
+    {
+      "key": "SUPABASE_ANON_KEY",
+      "value": "your-anon-key-here",
+      "description": "Supabase anon/public key"
+    },
+    {
+      "key": "ACCESS_TOKEN",
+      "value": "",
+      "description": "JWT access token from login response. Set this after Step 2."
+    },
+    {
+      "key": "SPACE_ID",
+      "value": "",
+      "description": "A parking space UUID — set after searching or from seed data"
+    },
+    {
+      "key": "BOOKING_ID",
+      "value": "",
+      "description": "A booking UUID — set after creating a booking"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Auth",
+      "item": [
+        {
+          "name": "1.1 Sign Up (New Driver)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "apikey", "value": "{{SUPABASE_ANON_KEY}}"}
+            ],
+            "url": "{{SUPABASE_URL}}/auth/v1/signup",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"driver@test.com\",\n  \"password\": \"TestPass123!\",\n  \"data\": {\n    \"full_name\": \"Test Driver\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "1.2 Log In",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.access_token) {",
+                  "  pm.collectionVariables.set('ACCESS_TOKEN', body.access_token);",
+                  "  console.log('Token saved to ACCESS_TOKEN variable');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "apikey", "value": "{{SUPABASE_ANON_KEY}}"}
+            ],
+            "url": "{{SUPABASE_URL}}/auth/v1/token?grant_type=password",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"driver@test.com\",\n  \"password\": \"TestPass123!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "1.3 Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "apikey", "value": "{{SUPABASE_ANON_KEY}}"},
+              {"key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}"}
+            ],
+            "url": "{{SUPABASE_URL}}/rest/v1/my_profile"
+          }
+        },
+        {
+          "name": "1.4 Update Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "apikey", "value": "{{SUPABASE_ANON_KEY}}"},
+              {"key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}"},
+              {"key": "Prefer", "value": "return=representation"}
+            ],
+            "url": "{{SUPABASE_URL}}/rest/v1/profiles?id=eq.{{USER_ID}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Updated Name\",\n  \"phone\": \"+91-9876543210\",\n  \"preferred_vehicle\": \"sedan\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Parking Discovery",
+      "item": [
+        {
+          "name": "2.1 Browse Active Spaces (No Auth Required)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "apikey", "value": "{{SUPABASE_ANON_KEY}}"}
+            ],
+            "url": {
+              "raw": "{{SUPABASE_URL}}/rest/v1/active_parking_spaces?limit=10",
+              "host": ["{{SUPABASE_URL}}"],
+              "path": ["rest", "v1", "active_parking_spaces"],
+              "query": [
+                {"key": "limit", "value": "10"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "2.2 Search Parking (Near Bangalore City Center)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.results && body.results.length > 0) {",
+                  "  pm.collectionVariables.set('SPACE_ID', body.results[0].id);",
+                  "  console.log('First space ID saved:', body.results[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "apikey", "value": "{{SUPABASE_ANON_KEY}}"},
+              {"key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}"}
+            ],
+            "url": "{{SUPABASE_URL}}/functions/v1/search-parking",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lat\": 12.9716,\n  \"lng\": 77.5946,\n  \"radius_km\": 10,\n  \"starts_at\": \"2026-11-01T10:00:00+05:30\",\n  \"ends_at\": \"2026-11-01T14:00:00+05:30\",\n  \"vehicle_type\": \"sedan\"\n}"
+            }
+          }
+        },
+        {
+          "name": "2.3 Search with Filters (Covered + EV Only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "apikey", "value": "{{SUPABASE_ANON_KEY}}"}
+            ],
+            "url": "{{SUPABASE_URL}}/functions/v1/search-parking",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lat\": 12.9352,\n  \"lng\": 77.6270,\n  \"radius_km\": 5,\n  \"covered_only\": true,\n  \"ev_charging\": true,\n  \"vehicle_type\": \"electric\"\n}"
+            }
+          }
+        },
+        {
+          "name": "2.4 Check Availability for a Space",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "apikey", "value": "{{SUPABASE_ANON_KEY}}"},
+              {"key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}"}
+            ],
+            "url": "{{SUPABASE_URL}}/rest/v1/rpc/check_space_availability",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p_space_id\": \"{{SPACE_ID}}\",\n  \"p_starts_at\": \"2026-11-01T10:00:00+05:30\",\n  \"p_ends_at\": \"2026-11-01T14:00:00+05:30\"\n}"
+            }
+          }
+        },
+        {
+          "name": "2.5 Calculate Booking Price",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "apikey", "value": "{{SUPABASE_ANON_KEY}}"},
+              {"key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}"}
+            ],
+            "url": "{{SUPABASE_URL}}/rest/v1/rpc/calculate_booking_price",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p_space_id\": \"{{SPACE_ID}}\",\n  \"p_starts_at\": \"2026-11-01T10:00:00+05:30\",\n  \"p_ends_at\": \"2026-11-01T14:00:00+05:30\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Booking Operations",
+      "item": [
+        {
+          "name": "3.1 Create Booking (Happy Path)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.success && body.booking_id) {",
+                  "  pm.collectionVariables.set('BOOKING_ID', body.booking_id);",
+                  "  console.log('Booking ID saved:', body.booking_id);",
+                  "}",
+                  "pm.test('Booking created successfully', () => {",
+                  "  pm.expect(body.success).to.be.true;",
+                  "  pm.expect(body.booking_id).to.be.a('string');",
+                  "  pm.expect(body.status).to.equal('confirmed');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "apikey", "value": "{{SUPABASE_ANON_KEY}}"},
+              {"key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}"}
+            ],
+            "url": "{{SUPABASE_URL}}/functions/v1/create-booking",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"space_id\": \"{{SPACE_ID}}\",\n  \"starts_at\": \"2026-11-01T10:00:00+05:30\",\n  \"ends_at\": \"2026-11-01T14:00:00+05:30\",\n  \"vehicle_type\": \"sedan\",\n  \"vehicle_plate\": \"KA-01-AB-1234\",\n  \"driver_notes\": \"Please reserve a spot near the elevator.\"\n}"
+            }
+          }
+        },
+        {
+          "name": "3.2 Try Duplicate Booking (Should Fail - NO_AVAILABILITY)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('Duplicate booking rejected', () => {",
+                  "  pm.expect(body.success).to.be.false;",
+                  "  pm.expect(['NO_AVAILABILITY', 'BOOKING_CONFLICT']).to.include(body.error_code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "apikey", "value": "{{SUPABASE_ANON_KEY}}"},
+              {"key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}"}
+            ],
+            "url": "{{SUPABASE_URL}}/functions/v1/create-booking",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"space_id\": \"{{SPACE_ID}}\",\n  \"starts_at\": \"2026-11-01T10:00:00+05:30\",\n  \"ends_at\": \"2026-11-01T14:00:00+05:30\",\n  \"vehicle_type\": \"sedan\"\n}"
+            }
+          }
+        },
+        {
+          "name": "3.3 Try Booking Under 2 Hours (Should Fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('Sub-2-hour booking rejected', () => {",
+                  "  pm.expect(body.success).to.be.false;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "apikey", "value": "{{SUPABASE_ANON_KEY}}"},
+              {"key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}"}
+            ],
+            "url": "{{SUPABASE_URL}}/functions/v1/create-booking",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"space_id\": \"{{SPACE_ID}}\",\n  \"starts_at\": \"2026-11-02T10:00:00+05:30\",\n  \"ends_at\": \"2026-11-02T10:30:00+05:30\",\n  \"vehicle_type\": \"sedan\"\n}"
+            }
+          }
+        },
+        {
+          "name": "3.4 Try Booking Without Auth (Should Fail 401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Unauthenticated booking rejected with 401', () => {",
+                  "  pm.expect(pm.response.code).to.equal(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "apikey", "value": "{{SUPABASE_ANON_KEY}}"}
+            ],
+            "url": "{{SUPABASE_URL}}/functions/v1/create-booking",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"space_id\": \"{{SPACE_ID}}\",\n  \"starts_at\": \"2026-11-03T10:00:00+05:30\",\n  \"ends_at\": \"2026-11-03T14:00:00+05:30\",\n  \"vehicle_type\": \"sedan\"\n}"
+            }
+          }
+        },
+        {
+          "name": "3.5 Get My Bookings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "apikey", "value": "{{SUPABASE_ANON_KEY}}"},
+              {"key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}"}
+            ],
+            "url": "{{SUPABASE_URL}}/rest/v1/my_bookings?order=created_at.desc"
+          }
+        },
+        {
+          "name": "3.6 Get My Bookings via RPC Function",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "apikey", "value": "{{SUPABASE_ANON_KEY}}"},
+              {"key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}"}
+            ],
+            "url": "{{SUPABASE_URL}}/rest/v1/rpc/get_driver_bookings",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p_limit\": 10,\n  \"p_offset\": 0\n}"
+            }
+          }
+        },
+        {
+          "name": "3.7 Cancel a Booking",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('Booking cancelled', () => {",
+                  "  pm.expect(body.success).to.be.true;",
+                  "  pm.expect(body.status).to.equal('cancelled');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "apikey", "value": "{{SUPABASE_ANON_KEY}}"},
+              {"key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}"}
+            ],
+            "url": "{{SUPABASE_URL}}/rest/v1/rpc/cancel_booking",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p_booking_id\": \"{{BOOKING_ID}}\",\n  \"p_cancellation_reason\": \"Change of plans\"\n}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
