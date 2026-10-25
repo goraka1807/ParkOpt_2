@@ -590,6 +590,7 @@ END $$;
 -- Allows only: full_name, phone, avatar_url, preferred_vehicle.
 -- Blocks changes to: role, is_active, tos_accepted, id, created_at.
 -- Uses the helper function to compare against current values without recursion.
+DROP POLICY IF EXISTS "profiles_update_own_safe" ON public.profiles;
 CREATE POLICY "profiles_update_own_safe"
   ON public.profiles
   FOR UPDATE

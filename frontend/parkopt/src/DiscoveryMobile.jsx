@@ -29,7 +29,7 @@ function BayCard({ bay, selected, onSelect }) {
   </article>
 }
 
-export default function DiscoveryMobile({ setPage }) {
+export default function DiscoveryMobile({ setPage, onHold }) {
   const [location, setLocation] = useState('West Hartford Center, CT')
   const [selected, setSelected] = useState(bays[0])
   const [sheetOpen, setSheetOpen] = useState(true)
@@ -42,6 +42,6 @@ export default function DiscoveryMobile({ setPage }) {
       <div className="discovery-sheet-tools"><b><span className="live-dot" /> 3 OPTIONS NEARBY</b><button>Sort: <strong>Best match</strong> ↕</button></div>
       <div className="discovery-bays">{bays.map((bay) => <BayCard key={bay.id} bay={bay} selected={selected.id === bay.id} onSelect={choose} />)}</div>
     </section>
-    <div className="discovery-hold"><div><span>READY TO HOLD</span><strong>{selected.name}</strong></div><b>{selected.price}<small>/hr</small></b><button onClick={() => setPage('facility')}>Continue <span>→</span></button></div>
+    <div className="discovery-hold"><div><span>READY TO HOLD</span><strong>{selected.name}</strong></div><b>{selected.price}<small>/hr</small></b><button onClick={() => { onHold?.(selected); setPage('facility') }}>Continue <span>→</span></button></div>
   </main>
 }
