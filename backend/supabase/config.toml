@@ -41,4 +41,4 @@ enable_confirmations = false   # Set to true in production
 
 [functions]
 # Edge Functions configuration
-verify_jwt = true
+

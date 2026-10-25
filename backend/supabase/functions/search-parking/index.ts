@@ -16,19 +16,27 @@
 // =============================================================================
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { validateSearchRequest } from '../shared/validation.mjs'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+const allowedOrigins = (Deno.env.get('CORS_ALLOWED_ORIGINS') ?? 'http://localhost:5173,https://localhost:5173').split(',').map((origin) => origin.trim()).filter(Boolean)
+
+const buildCorsHeaders = (origin: string | null) => {
+  const isAllowed = origin ? allowedOrigins.includes(origin) : true
+  return {
+    'Access-Control-Allow-Origin': isAllowed && origin ? origin : allowedOrigins[0] ?? '*',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Vary': 'Origin',
+  }
 }
 
 // Validation helpers
 const isNumber = (v: unknown): v is number => typeof v === 'number' && isFinite(v)
-const validTimestamp = (val: unknown): val is string =>
-  typeof val === 'string' && !isNaN(Date.parse(val))
 
 Deno.serve(async (req: Request) => {
+  const origin = req.headers.get('Origin')
+  const corsHeaders = buildCorsHeaders(origin)
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -68,71 +76,33 @@ Deno.serve(async (req: Request) => {
       )
     }
 
+    const validation = validateSearchRequest(body)
+    if (!validation.valid) {
+      return new Response(
+        JSON.stringify({ error: validation.errors[0] ?? 'Request validation failed.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const {
       lat,
       lng,
-      radius_km   = 5.0,
-      starts_at   = null,
-      ends_at     = null,
-      vehicle_type = null,
-      max_price   = null,
-      covered_only = false,
-      ev_charging  = false,
-      limit       = 20,
-      offset      = 0,
-    } = body
+      radius_km,
+      starts_at,
+      ends_at,
+      vehicle_type,
+      max_price,
+      covered_only,
+      ev_charging,
+      limit,
+      offset,
+    } = validation.normalized
 
-    // Required: lat and lng
-    if (!isNumber(lat) || lat < -90 || lat > 90) {
-      return new Response(
-        JSON.stringify({
-          error: 'lat is required and must be a number between -90 and 90.'
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    if (!isNumber(lng) || lng < -180 || lng > 180) {
-      return new Response(
-        JSON.stringify({
-          error: 'lng is required and must be a number between -180 and 180.'
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Validate radius
-    if (!isNumber(radius_km) || radius_km <= 0 || radius_km > 50) {
-      return new Response(
-        JSON.stringify({
-          error: 'radius_km must be a positive number between 0 and 50.'
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // If time window provided, validate both timestamps
-    if (starts_at !== null || ends_at !== null) {
-      if (!validTimestamp(starts_at) || !validTimestamp(ends_at)) {
-        return new Response(
-          JSON.stringify({
-            error: 'If providing a time window, both starts_at and ends_at must be valid ISO 8601 timestamps.'
-          }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      }
-
-      if (new Date(starts_at as string) >= new Date(ends_at as string)) {
-        return new Response(
-          JSON.stringify({ error: 'starts_at must be before ends_at.' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      }
-    }
-
-    // Clamp limit to reasonable range
-    const safeLimit = Math.min(Math.max(Number(limit) || 20, 1), 100)
-    const safeOffset = Math.max(Number(offset) || 0, 0)
+    const safeLimit = limit
+    const safeOffset = offset
+    const safeCoveredOnly = covered_only
+    const safeEvCharging = ev_charging
+    const parsedMaxPrice = max_price === null ? null : Number(max_price)
 
     // -------------------------------------------------------------------------
     // 3. Call the database function
@@ -144,9 +114,9 @@ Deno.serve(async (req: Request) => {
       p_starts_at:    starts_at,
       p_ends_at:      ends_at,
       p_vehicle_type: vehicle_type,
-      p_max_price:    max_price,
-      p_covered_only: Boolean(covered_only),
-      p_ev_charging:  Boolean(ev_charging),
+      p_max_price:    parsedMaxPrice,
+      p_covered_only: safeCoveredOnly,
+      p_ev_charging:  safeEvCharging,
       p_limit:        safeLimit,
       p_offset:       safeOffset,
     })
@@ -155,8 +125,7 @@ Deno.serve(async (req: Request) => {
       console.error('Search RPC error:', error)
       return new Response(
         JSON.stringify({
-          error: 'Search failed. Please try again.',
-          detail: error.message  // safe to include in development; remove in production
+          error: 'Search failed. Please try again.'
         }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )

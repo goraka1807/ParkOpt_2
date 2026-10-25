@@ -103,26 +103,64 @@ CREATE TRIGGER set_profiles_updated_at
 -- ---------------------------------------------------------------------------
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
--- Anyone can read basic profile info (needed for displaying owner info on listings)
--- In a more restrictive design, you'd limit which columns are exposed.
-CREATE POLICY "profiles_select_own_or_public"
+-- Users can read only their own profile, or an administrator can read any profile.
+-- This prevents unauthenticated or active-user access to private data such as phone numbers.
+CREATE POLICY "profiles_select_own_or_admin"
   ON public.profiles
   FOR SELECT
   USING (
-    auth.uid() = id         -- user reads their own profile
-    OR is_active = TRUE     -- or any active profile (for public display)
+    auth.uid() = id
+    OR EXISTS (
+      SELECT 1 FROM public.profiles p
+      WHERE p.id = auth.uid() AND p.role = 'admin'
+    )
   );
 
--- Users can only update their OWN profile.
-CREATE POLICY "profiles_update_own"
+-- ---------------------------------------------------------------------------
+-- Helper function for profile UPDATE policy.
+-- SECURITY DEFINER allows it to read the current row without going through
+-- RLS, avoiding the infinite-recursion problem that occurs when WITH CHECK
+-- subqueries re-enter the same policy.
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.get_own_protected_profile_fields()
+RETURNS TABLE (
+  role        user_role,
+  is_active   BOOLEAN,
+  tos_accepted BOOLEAN
+)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT role, is_active, tos_accepted
+  FROM public.profiles
+  WHERE id = auth.uid();
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.get_own_protected_profile_fields() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.get_own_protected_profile_fields() FROM anon;
+GRANT  EXECUTE ON FUNCTION public.get_own_protected_profile_fields() TO authenticated;
+
+-- Users can update their OWN profile for self-service fields only:
+--   full_name, phone, avatar_url, preferred_vehicle, tos_accepted (true only).
+-- Blocked fields (role, is_active) must not change through this policy.
+-- The helper function prevents recursive policy evaluation.
+CREATE POLICY "profiles_update_own_safe"
   ON public.profiles
   FOR UPDATE
   USING (auth.uid() = id)
   WITH CHECK (
     auth.uid() = id
-    -- Prevent the user from elevating their own role via the API.
-    -- Role changes must happen via a SECURITY DEFINER function or admin action.
-    AND role = (SELECT role FROM public.profiles WHERE id = auth.uid())
+    -- role must remain unchanged (use elevate_user_role() for changes)
+    AND role = (SELECT p.role FROM public.get_own_protected_profile_fields() p)
+    -- is_active must remain unchanged (use deactivate_user() for changes)
+    AND is_active = (SELECT p.is_active FROM public.get_own_protected_profile_fields() p)
+    -- tos_accepted: users may accept (set TRUE) but never un-accept (set FALSE)
+    AND (
+      tos_accepted = TRUE
+      OR tos_accepted = (SELECT p.tos_accepted FROM public.get_own_protected_profile_fields() p)
+    )
   );
 
 -- No direct INSERT via API — the trigger handles profile creation.

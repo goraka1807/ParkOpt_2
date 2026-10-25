@@ -18,15 +18,25 @@
 // =============================================================================
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { validateBookingRequest } from '../shared/validation.mjs'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',        // In production: restrict to your domain
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+const allowedOrigins = (Deno.env.get('CORS_ALLOWED_ORIGINS') ?? 'http://localhost:5173,https://localhost:5173').split(',').map((origin) => origin.trim()).filter(Boolean)
+
+const buildCorsHeaders = (origin: string | null) => {
+  const isAllowed = origin ? allowedOrigins.includes(origin) : true
+  return {
+    'Access-Control-Allow-Origin': isAllowed && origin ? origin : allowedOrigins[0] ?? '*',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Vary': 'Origin',
+  }
 }
 
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight (browser sends OPTIONS before actual request)
+  const origin = req.headers.get('Origin')
+  const corsHeaders = buildCorsHeaders(origin)
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -89,69 +99,19 @@ Deno.serve(async (req: Request) => {
       )
     }
 
-    // Required fields
+    const validation = validateBookingRequest(body)
+    if (!validation.valid) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error_code: 'INVALID_INPUT',
+          message: validation.errors[0] ?? 'Request validation failed.'
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const { space_id, starts_at, ends_at, vehicle_type, vehicle_plate, driver_notes } = body
-
-    if (!space_id || typeof space_id !== 'string') {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error_code: 'MISSING_FIELD',
-          message: 'space_id is required.'
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    if (!starts_at || !ends_at) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error_code: 'MISSING_FIELD',
-          message: 'starts_at and ends_at are required.'
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    if (!vehicle_type) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error_code: 'MISSING_FIELD',
-          message: 'vehicle_type is required.'
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Validate timestamp formats
-    const validTimestamp = (val: unknown): val is string =>
-      typeof val === 'string' && !isNaN(Date.parse(val))
-
-    if (!validTimestamp(starts_at) || !validTimestamp(ends_at)) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error_code: 'INVALID_TIMESTAMP',
-          message: 'starts_at and ends_at must be valid ISO 8601 timestamps.'
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Validate vehicle_type is one of our enum values
-    const validVehicleTypes = ['motorcycle', 'compact', 'sedan', 'suv', 'van', 'truck', 'electric']
-    if (!validVehicleTypes.includes(vehicle_type as string)) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error_code: 'INVALID_VEHICLE_TYPE',
-          message: `vehicle_type must be one of: ${validVehicleTypes.join(', ')}`
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
 
     // -------------------------------------------------------------------------
     // 4. Call the database function create_booking()

@@ -579,6 +579,26 @@ AS $$
 DECLARE
   v_search_point GEOGRAPHY;
 BEGIN
+  IF p_lat IS NULL OR p_lng IS NULL THEN
+    RAISE EXCEPTION 'Latitude and longitude are required.';
+  END IF;
+
+  IF p_radius_km IS NULL OR p_radius_km <= 0 OR p_radius_km > 50 THEN
+    RAISE EXCEPTION 'radius_km must be a positive number between 0 and 50.';
+  END IF;
+
+  IF p_limit IS NULL OR p_limit < 1 OR p_limit > 100 THEN
+    RAISE EXCEPTION 'limit must be an integer between 1 and 100.';
+  END IF;
+
+  IF p_offset IS NULL OR p_offset < 0 THEN
+    RAISE EXCEPTION 'offset must be a non-negative integer.';
+  END IF;
+
+  IF p_starts_at IS NOT NULL AND p_ends_at IS NOT NULL AND p_starts_at >= p_ends_at THEN
+    RAISE EXCEPTION 'starts_at must be before ends_at.';
+  END IF;
+
   -- Build the search origin point from the provided coordinates
   v_search_point := ST_MakePoint(p_lng, p_lat)::GEOGRAPHY;
 

@@ -5,8 +5,10 @@
 -- Key design decisions:
 -- 1. Price is stored IN PAISA at time of booking — never recalculated live.
 --    This protects against price changes after booking.
--- 2. Overlap prevention is enforced by an EXCLUSION CONSTRAINT using the
---    btree_gist extension, not just application logic.
+-- 2. Overlap prevention for multi-capacity facilities is enforced by the
+--    advisory-lock + availability-count pattern in create_booking() (migration 005).
+--    There is NO whole-facility exclusion constraint — that would incorrectly
+--    limit a 10-capacity facility to a single booking per time slot.
 -- 3. Minimum 2-hour duration is enforced by a CHECK constraint.
 -- 4. A database function (not frontend) creates bookings to prevent race conditions.
 -- Depends on: 001, 002, 003
@@ -85,38 +87,25 @@ CREATE TABLE IF NOT EXISTS public.bookings (
 );
 
 -- ---------------------------------------------------------------------------
--- THE CRITICAL CONSTRAINT: Exclusion Constraint for Overlap Prevention
+-- CAPACITY-AWARE overlap protection
 --
--- This constraint ensures that for the same parking space, no two ACTIVE
--- bookings can have overlapping time periods.
+-- There is NO whole-facility exclusion constraint here. A GIST exclusion on
+-- (space_id, booking_period) would allow at most ONE active booking per time
+-- slot on a given space — wrong for facilities with total_capacity > 1.
 --
--- How it works:
--- - For each pair of rows where space_id EQUALS space_id
---   AND booking_period OVERLAPS booking_period
---   AND both statuses are active (not cancelled/completed)...
--- - ...the constraint is VIOLATED (rejected).
+-- Protection against overbooking is provided by:
+--   1. pg_advisory_xact_lock(space_id_derived_key) in create_booking()
+--      — serialises concurrent booking attempts for the same space.
+--   2. check_space_availability() called INSIDE the lock
+--      — counts active overlapping bookings and compares to total_capacity.
+--   3. INSERT is denied to direct API clients via RLS (see policy below).
 --
--- This is enforced at the DATABASE level — concurrent transactions that both
--- try to book the same slot will have one succeed and one fail.
--- This is far more reliable than checking in application code.
---
--- The partial index (WHERE status IN ('pending', 'confirmed')) means
--- cancelled/completed bookings don't block re-use of the slot.
+-- Adjacent bookings using half-open intervals [start, end) do NOT overlap:
+--   tstzrange('10:00','12:00','[)') && tstzrange('12:00','14:00','[)') = FALSE
+-- This is the correct semantics for back-to-back parking reservations.
 -- ---------------------------------------------------------------------------
-CREATE EXTENSION IF NOT EXISTS btree_gist;  -- idempotent
-
-CREATE UNIQUE INDEX IF NOT EXISTS idx_bookings_no_overlap
-  ON public.bookings
-  USING GIST (
-    space_id,
-    booking_period
-  )
-  WHERE status IN ('pending', 'confirmed');
-
--- Note: The above GIST index on space_id + tstzrange gives us:
--- 1. A fast lookup index for querying bookings by space + time range
--- 2. Overlap conflict detection (two rows with same space_id + overlapping ranges
---    will violate this UNIQUE GIST index)
+-- btree_gist is still needed for the booking_period GiST index (overlap queries).
+CREATE EXTENSION IF NOT EXISTS btree_gist;
 
 -- ---------------------------------------------------------------------------
 -- Regular indexes for common query patterns
@@ -180,33 +169,20 @@ CREATE POLICY "bookings_select_admin"
     )
   );
 
--- INSERT is handled by the create_booking() database function (SECURITY DEFINER).
--- We do NOT allow direct INSERT from the API — this prevents price manipulation
--- and concurrency issues.
--- The function bypasses RLS (SECURITY DEFINER) and does all validation internally.
-CREATE POLICY "bookings_insert_via_function_only"
+-- INSERT: Deny all direct API inserts.
+-- Bookings MUST be created via create_booking() which is SECURITY DEFINER
+-- and bypasses RLS. This prevents price manipulation, status injection,
+-- and driver_id spoofing.
+CREATE POLICY "bookings_no_direct_insert"
   ON public.bookings
   FOR INSERT
-  WITH CHECK (auth.uid() = driver_id);
+  WITH CHECK (FALSE);
 
--- Drivers can cancel their own future bookings (via a function, not direct UPDATE).
--- Direct UPDATE is restricted to status field only via the cancel function.
-CREATE POLICY "bookings_update_driver_cancel"
+-- UPDATE: Deny all direct API updates.
+-- Cancellation goes through cancel_booking() (SECURITY DEFINER).
+-- Owner/admin updates go through get_space_bookings() or admin functions.
+-- Routing through functions ensures only allowed fields are modified.
+CREATE POLICY "bookings_no_direct_update"
   ON public.bookings
   FOR UPDATE
-  USING (auth.uid() = driver_id)
-  WITH CHECK (
-    auth.uid() = driver_id
-    AND status = 'cancelled'  -- drivers can only set status to cancelled
-  );
-
--- Owners can update status of bookings on their spaces.
-CREATE POLICY "bookings_update_space_owner"
-  ON public.bookings
-  FOR UPDATE
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.parking_spaces ps
-      WHERE ps.id = space_id AND ps.owner_id = auth.uid()
-    )
-  );
+  USING (FALSE);
