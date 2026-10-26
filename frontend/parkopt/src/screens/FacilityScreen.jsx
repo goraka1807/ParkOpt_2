@@ -132,7 +132,7 @@ export default function FacilityScreen({ facility, searchParams, onBook, onBack 
       <div className="fixed bottom-20 w-full max-w-105 left-1/2 -translate-x-1/2 z-50 px-4 py-4 bg-linear-to-t from-surface via-surface/95 to-transparent">
         <button
           onClick={() => onBook(facility, searchParams)}
-          className="w-full py-4 rounded-full bg-[#c5f269] text-on-primary font-bold text-[16px] flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all shadow-lg"
+          className="w-full py-4 rounded-full bg-[#c5f269] text-white font-bold text-[16px] flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all shadow-lg"
           style={{ fontFamily: 'Space Grotesk, sans-serif' }}
         >
           <span className="material-symbols-outlined text-[20px]">local_parking</span>

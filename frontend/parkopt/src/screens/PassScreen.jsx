@@ -135,7 +135,7 @@ export default function PassScreen({ booking, onViewBookings, onGoHome }) {
           <div className="flex flex-col gap-3">
             <button
               onClick={onViewBookings}
-              className="w-full py-4 rounded-full bg-[#c5f269] text-[#253600] font-bold text-[15px] flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all"
+              className="w-full py-4 rounded-full bg-[#c5f269] text-white font-bold text-[15px] flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all"
               style={{ fontFamily: 'Space Grotesk, sans-serif' }}
             >
               <span className="material-symbols-outlined text-[20px]">confirmation_number</span>
