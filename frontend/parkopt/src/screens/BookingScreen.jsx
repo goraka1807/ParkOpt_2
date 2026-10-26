@@ -171,7 +171,7 @@ export default function BookingScreen({ facility, searchParams, session, onConfi
 
               <div className="rounded-2xl bg-[#0d1c2d] border border-white/10 p-4 flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-semibold text-black uppercase tracking-wider">Vehicle Type</label>
+                  <label className="text-[11px] font-semibold text-white uppercase tracking-wider">Vehicle Type</label>
                   <div className="grid grid-cols-3 gap-2">
                     {VEHICLE_TYPES.map((v) => (
                       <button
