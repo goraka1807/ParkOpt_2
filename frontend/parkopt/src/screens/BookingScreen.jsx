@@ -171,7 +171,7 @@ export default function BookingScreen({ facility, searchParams, session, onConfi
 
               <div className="rounded-2xl bg-[#0d1c2d] border border-white/10 p-4 flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-semibold text-white uppercase tracking-wider">Vehicle Type</label>
+                  <label className="text-[11px] font-semibold text-black uppercase tracking-wider">Vehicle Type</label>
                   <div className="grid grid-cols-3 gap-2">
                     {VEHICLE_TYPES.map((v) => (
                       <button
@@ -303,7 +303,7 @@ export default function BookingScreen({ facility, searchParams, session, onConfi
               setStep((s) => s + 1)
             }}
             disabled={step === 1 && !durationValid}
-            className="w-full py-4 rounded-full bg-[#c5f269] text-white font-bold text-[15px] flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-40"
+            className="w-full py-4 rounded-full bg-[#c5f269] text-black font-bold text-[15px] flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-40"
             style={{ fontFamily: 'Space Grotesk, sans-serif' }}
           >
             Continue
@@ -313,7 +313,7 @@ export default function BookingScreen({ facility, searchParams, session, onConfi
           <button
             onClick={submit}
             disabled={loading}
-            className="w-full py-4 rounded-full bg-[#c5f269] text-white font-bold text-[15px] flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50"
+            className="w-full py-4 rounded-full bg-[#c5f269] text-black font-bold text-[15px] flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50"
             style={{ fontFamily: 'Space Grotesk, sans-serif' }}
           >
             {loading ? (
