@@ -304,23 +304,23 @@ export default function BookingScreen({ facility, searchParams, session, onConfi
             }}
             disabled={step === 1 && !durationValid}
             className="w-full py-4 rounded-full bg-[#c5f269] font-bold text-[15px] text-black flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-40"
-            style={{ fontFamily: 'Space Grotesk, sans-serif' }}
+            style={{ fontFamily: 'Space Grotesk, sans-serif', color: '#000000' }}
           >
             Continue
-            <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
+            <span className="material-symbols-outlined text-[20px]" style={{ color: '#000000' }}>arrow_forward</span>
           </button>
         ) : (
           <button
             onClick={submit}
             disabled={loading}
             className="w-full py-4 rounded-full bg-[#c5f269] text-black font-bold text-[15px] flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50"
-            style={{ fontFamily: 'Space Grotesk, sans-serif' }}
+            style={{ fontFamily: 'Space Grotesk, sans-serif', color: '#000000' }}
           >
             {loading ? (
               <span className="w-5 h-5 border-2 border-[#253600]/30 border-t-[#253600] rounded-full animate-spin" />
             ) : (
               <>
-                <span className="material-symbols-outlined text-[20px]">lock</span>
+                <span className="material-symbols-outlined text-[20px]" style={{ color: '#000000' }}>lock</span>
                 Confirm Booking
               </>
             )}
