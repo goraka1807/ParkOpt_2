@@ -303,7 +303,7 @@ export default function BookingScreen({ facility, searchParams, session, onConfi
               setStep((s) => s + 1)
             }}
             disabled={step === 1 && !durationValid}
-            className="w-full py-4 rounded-full bg-[#c5f269] text-black font-bold text-[15px] flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-40"
+            className="w-full py-4 rounded-full bg-[#c5f269] font-bold text-[15px] [color:#000000] flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-40"
             style={{ fontFamily: 'Space Grotesk, sans-serif' }}
           >
             Continue
